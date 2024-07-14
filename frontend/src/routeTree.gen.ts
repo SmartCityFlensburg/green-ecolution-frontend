@@ -19,6 +19,7 @@ import { Route as IndexImport } from './routes/index'
 import { Route as WaypointsIndexImport } from './routes/waypoints/index'
 import { Route as DashboardIndexImport } from './routes/dashboard/index'
 import { Route as WaypointsNewImport } from './routes/waypoints/new'
+import { Route as WaypointsDemoImport } from './routes/waypoints/demo'
 import { Route as DashboardTreeIndexImport } from './routes/dashboard/tree/index'
 import { Route as DashboardTreeTreeIdImport } from './routes/dashboard/tree/$treeId'
 
@@ -61,6 +62,11 @@ const DashboardIndexRoute = DashboardIndexImport.update({
 
 const WaypointsNewRoute = WaypointsNewImport.update({
   path: '/waypoints/new',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const WaypointsDemoRoute = WaypointsDemoImport.update({
+  path: '/waypoints/demo',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -113,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VehiclesImport
       parentRoute: typeof rootRoute
     }
+    '/waypoints/demo': {
+      id: '/waypoints/demo'
+      path: '/waypoints/demo'
+      fullPath: '/waypoints/demo'
+      preLoaderRoute: typeof WaypointsDemoImport
+      parentRoute: typeof rootRoute
+    }
     '/waypoints/new': {
       id: '/waypoints/new'
       path: '/waypoints/new'
@@ -159,6 +172,7 @@ export const routeTree = rootRoute.addChildren({
   SettingsRoute,
   TeamRoute,
   VehiclesRoute,
+  WaypointsDemoRoute,
   WaypointsNewRoute,
   DashboardIndexRoute,
   WaypointsIndexRoute,
@@ -179,6 +193,7 @@ export const routeTree = rootRoute.addChildren({
         "/settings",
         "/team",
         "/vehicles",
+        "/waypoints/demo",
         "/waypoints/new",
         "/dashboard/",
         "/waypoints/",
@@ -200,6 +215,9 @@ export const routeTree = rootRoute.addChildren({
     },
     "/vehicles": {
       "filePath": "vehicles.tsx"
+    },
+    "/waypoints/demo": {
+      "filePath": "waypoints/demo.tsx"
     },
     "/waypoints/new": {
       "filePath": "waypoints/new.tsx"

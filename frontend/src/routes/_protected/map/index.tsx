@@ -2,46 +2,46 @@ import {
   createFileRoute,
   useLoaderData,
   useNavigate,
-} from '@tanstack/react-router'
-import MapButtons from '@/components/map/MapButtons'
-import { Tree, TreeCluster } from '@green-ecolution/backend-client'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { treeQuery } from '@/api/queries'
-import { useRef, useState } from 'react'
-import Dialog from '@/components/general/filter/Dialog'
-import StatusFieldset from '@/components/general/filter/fieldsets/StatusFieldset'
-import { getWateringStatusDetails } from '@/hooks/useDetailsForWateringStatus'
-import useFilter from '@/hooks/useFilter'
-import FilterProvider, { Filters } from '@/context/FilterContext'
-import { z } from 'zod'
-import ClusterFieldset from '@/components/general/filter/fieldsets/ClusterFieldset'
-import PlantingYearFieldset from '@/components/general/filter/fieldsets/PlantingYearFieldset'
-import useMapInteractions from '@/hooks/useMapInteractions'
-import { WithTreesAndClusters } from '@/components/map/marker/WithAllClusterAndTrees'
-import WithFilterdTrees from '@/components/map/marker/WithFilterdTrees'
+} from '@tanstack/react-router';
+import MapButtons from '@/components/map/MapButtons';
+import { Tree, TreeCluster } from '@green-ecolution/backend-client';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { treeQuery } from '@/api/queries';
+import { useRef, useState } from 'react';
+import Dialog from '@/components/general/filter/Dialog';
+import StatusFieldset from '@/components/general/filter/fieldsets/StatusFieldset';
+import { getWateringStatusDetails } from '@/hooks/useDetailsForWateringStatus';
+import useFilter from '@/hooks/useFilter';
+import FilterProvider, { Filters } from '@/context/FilterContext';
+import { z } from 'zod';
+import ClusterFieldset from '@/components/general/filter/fieldsets/ClusterFieldset';
+import PlantingYearFieldset from '@/components/general/filter/fieldsets/PlantingYearFieldset';
+import useMapInteractions from '@/hooks/useMapInteractions';
+import { WithTreesAndClusters } from '@/components/map/marker/WithAllClusterAndTrees';
+import WithFilterdTrees from '@/components/map/marker/WithFilterdTrees';
 
 const mapFilterSchema = z.object({
   status: z.array(z.string()).optional(),
   hasCluster: z.boolean().optional(),
-  plantingYears: z.array(z.number()).optional(),
+  plantingYear: z.number().optional(),
   highlighted: z.number().optional(),
   tree: z.number().optional(),
   cluster: z.number().optional(),
-})
+});
 
 const hasActiveFilter = (search: {
-  status: string[]
-  hasCluster: true | undefined
-  plantingYears: number[]
-  tree: number | undefined
-  cluster: number | undefined
+  status: string[];
+  hasCluster: true | undefined;
+  plantingYear: number | undefined;
+  tree: number | undefined;
+  cluster: number | undefined;
 }) => {
   return search.status.length > 0 ||
     search.hasCluster !== undefined ||
-    search.plantingYears.length > 0
+    search.plantingYear !== undefined
     ? true
-    : false
-}
+    : false;
+};
 
 const filterData = (trees: Tree[], filters: Filters) => {
   return trees.filter((tree) => {
@@ -49,66 +49,66 @@ const filterData = (trees: Tree[], filters: Filters) => {
       filters.statusTags.length === 0 ||
       filters.statusTags.includes(
         getWateringStatusDetails(tree.wateringStatus).label
-      )
+      );
 
     const hasCluster =
       filters.hasCluster === undefined ||
       (filters.hasCluster && tree.treeClusterId) ||
-      (!filters.hasCluster && !tree.treeClusterId)
+      (!filters.hasCluster && !tree.treeClusterId);
 
-    const plantingYearsFilter =
-      filters.plantingYears.length === 0 ||
-      filters.plantingYears.includes(tree.plantingYear)
+    const plantingYearFilter =
+      filters.plantingYear === undefined ||
+      tree.plantingYear === filters.plantingYear;
 
-    return statusFilter && hasCluster && plantingYearsFilter
-  })
-}
+    return statusFilter && hasCluster && plantingYearFilter;
+  });
+};
 
 function MapView() {
-  const navigate = useNavigate({ from: '/map' })
-  const search = useLoaderData({ from: '/_protected/map/' })
-  const { enableDragging, disableDragging } = useMapInteractions()
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const { data: trees } = useSuspenseQuery(treeQuery())
-  const { filters } = useFilter()
-  const [activeFilter, setActiveFilter] = useState(hasActiveFilter(search))
+  const navigate = useNavigate({ from: '/map' });
+  const search = useLoaderData({ from: '/_protected/map/' });
+  const { enableDragging, disableDragging } = useMapInteractions();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const { data: trees } = useSuspenseQuery(treeQuery());
+  const { filters } = useFilter();
+  const [activeFilter, setActiveFilter] = useState(hasActiveFilter(search));
   const [filteredData, setFilteredData] = useState<Tree[]>(
     filterData(trees.data, filters)
-  )
+  );
 
   const handleTreeClick = (tree: Tree) => {
-    navigate({ to: `/tree/$treeId`, params: { treeId: tree.id.toString() } })
-  }
+    navigate({ to: `/tree/$treeId`, params: { treeId: tree.id.toString() } });
+  };
 
   const handleClusterClick = (cluster: TreeCluster) => {
     navigate({
       to: `/treecluster/$treeclusterId`,
       params: { treeclusterId: cluster.id.toString() },
-    })
-  }
+    });
+  };
 
   const handleFilter = () => {
-    const data = filterData(trees.data, filters)
+    const data = filterData(trees.data, filters);
     if (
       filters.statusTags.length > 0 ||
       filters.hasCluster !== undefined ||
-      filters.plantingYears.length > 0
+      filters.plantingYear !== undefined
     ) {
-      setActiveFilter(true)
+      setActiveFilter(true);
     } else {
-      setActiveFilter(false)
+      setActiveFilter(false);
     }
-    setFilteredData(data)
-  }
+    setFilteredData(data);
+  };
 
   const handleReset = () => {
-    setActiveFilter(false)
-    setFilteredData(trees.data)
-  }
+    setActiveFilter(false);
+    setFilteredData(trees.data);
+  };
 
   const handleMapInteractions = (isOpen: boolean) => {
-    isOpen ? disableDragging() : enableDragging()
-  }
+    isOpen ? disableDragging() : enableDragging();
+  };
 
   return (
     <>
@@ -144,37 +144,37 @@ function MapView() {
         />
       )}
     </>
-  )
+  );
 }
 
 const MapViewWithProvider = () => {
-  const search = useLoaderData({ from: '/_protected/map/' })
+  const search = useLoaderData({ from: '/_protected/map/' });
   return (
     <FilterProvider
       initialStatus={search.status ?? []}
       initialHasCluster={search.hasCluster ?? undefined}
-      initialPlantingYears={search.plantingYears ?? []}
+      initialPlantingYear={search.plantingYear ?? undefined}
     >
       <MapView />
     </FilterProvider>
-  )
-}
+  );
+};
 
 export const Route = createFileRoute('/_protected/map/')({
   component: MapViewWithProvider,
   validateSearch: mapFilterSchema,
 
   loaderDeps: ({
-    search: { status, hasCluster, plantingYears, tree, cluster },
+    search: { status, hasCluster, plantingYear, tree, cluster },
   }) => ({
     status: status || [],
     hasCluster: hasCluster || undefined,
-    plantingYears: plantingYears || [],
+    plantingYear: plantingYear || undefined,
     tree: tree || undefined,
     cluster: cluster || undefined,
   }),
 
-  loader: ({ deps: { status, hasCluster, plantingYears, tree, cluster } }) => {
-    return { status, hasCluster, plantingYears, tree, cluster }
+  loader: ({ deps: { status, hasCluster, plantingYear, tree, cluster } }) => {
+    return { status, hasCluster, plantingYear, tree, cluster };
   },
-})
+});

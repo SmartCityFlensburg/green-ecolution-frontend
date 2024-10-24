@@ -3,24 +3,24 @@ import {
   forwardRef,
   useEffect,
   useState,
-} from 'react'
-import FilterButton from '../buttons/FilterButton'
-import PrimaryButton from '../buttons/PrimaryButton'
-import SecondaryButton from '../buttons/SecondaryButton'
-import { X } from 'lucide-react'
-import { useNavigate } from '@tanstack/react-router'
-import useFilter from '@/hooks/useFilter'
-import { Filters } from '@/context/FilterContext'
-import useStore from '@/store/store'
+} from 'react';
+import FilterButton from '../buttons/FilterButton';
+import PrimaryButton from '../buttons/PrimaryButton';
+import SecondaryButton from '../buttons/SecondaryButton';
+import { X } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import useFilter from '@/hooks/useFilter';
+import { Filters } from '@/context/FilterContext';
+import useStore from '@/store/store';
 
 interface DialogProps {
-  headline: string
-  fullUrlPath: string
-  children?: React.ReactNode
-  isOnMap?: boolean
-  onApplyFilters: () => void
-  onResetFilters: () => void
-  onToggleOpen?: (isOpen: boolean) => void
+  headline: string;
+  fullUrlPath: string;
+  children?: React.ReactNode;
+  isOnMap?: boolean;
+  onApplyFilters: () => void;
+  onResetFilters: () => void;
+  onToggleOpen?: (isOpen: boolean) => void;
 }
 
 const Dialog = forwardRef(
@@ -36,27 +36,26 @@ const Dialog = forwardRef(
     }: DialogProps,
     ref: ForwardedRef<HTMLDivElement>
   ) => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false);
     const [oldValues, setOldValues] = useState<Filters>({
       statusTags: [],
       regionTags: [],
       hasCluster: undefined,
-      plantingYears: [],
-    })
-    const [count, setCount] = useState(0)
-    const navigate = useNavigate({ from: fullUrlPath })
+      plantingYear: undefined,
+    });
+    const [count, setCount] = useState(0);
+    const navigate = useNavigate({ from: fullUrlPath });
     const mapPosition = useStore((state) => ({
       lat: state.map.center[0],
       lng: state.map.center[1],
       zoom: state.map.zoom,
-    }))
+    }));
 
-    const { filters, resetFilters, applyOldStateToTags } = useFilter()
+    const { filters, resetFilters, applyOldStateToTags } = useFilter();
 
     const handleSubmit = () => {
-      onApplyFilters()
-      setIsOpen(false)
-      setIsOpen(false)
+      onApplyFilters();
+      setIsOpen(false);
       navigate({
         search: () => ({
           lat: isOnMap ? mapPosition.lat : undefined,
@@ -67,24 +66,21 @@ const Dialog = forwardRef(
           region:
             filters.regionTags.length > 0 ? filters.regionTags : undefined,
           hasCluster: filters.hasCluster ?? undefined,
-          plantingYears:
-            filters.plantingYears.length > 0
-              ? filters.plantingYears
-              : undefined,
+          plantingYear: filters.plantingYear ?? undefined,
         }),
-      })
-    }
+      });
+    };
 
     const handleReset = () => {
-      onResetFilters()
+      onResetFilters();
       applyOldStateToTags({
         statusTags: [],
         regionTags: [],
         hasCluster: undefined,
-        plantingYears: [],
-      })
-      resetFilters()
-      setIsOpen(false)
+        plantingYear: undefined,
+      });
+      resetFilters();
+      setIsOpen(false);
       isOnMap
         ? navigate({
             search: {
@@ -93,32 +89,32 @@ const Dialog = forwardRef(
               zoom: mapPosition.zoom,
             },
           })
-        : navigate({ search: () => ({}) })
-    }
+        : navigate({ search: () => ({}) });
+    };
 
     const handleClose = () => {
-      setIsOpen(false)
-      applyOldStateToTags(oldValues)
-    }
+      setIsOpen(false);
+      applyOldStateToTags(oldValues);
+    };
 
     const handleOpen = () => {
-      setOldValues(filters)
-      setIsOpen(true)
-    }
+      setOldValues(filters);
+      setIsOpen(true);
+    };
 
     useEffect(() => {
       setCount(
         filters.statusTags.length +
           filters.regionTags.length +
           (filters.hasCluster !== undefined ? 1 : 0) +
-          filters.plantingYears.length
-      )
-    }, [filters])
+          (filters.plantingYear !== undefined ? 1 : 0)
+      );
+    }, [filters]);
 
     useEffect(() => {
-      if (!onToggleOpen) return
-      onToggleOpen(isOpen)
-    }, [isOpen, onToggleOpen])
+      if (!onToggleOpen) return;
+      onToggleOpen(isOpen);
+    }, [isOpen, onToggleOpen]);
 
     return (
       <div className="font-nunito-sans text-base">
@@ -132,7 +128,7 @@ const Dialog = forwardRef(
           ariaLabel={headline}
           isOnMap={isOnMap}
           onClick={() => {
-            isOpen ? handleClose() : handleOpen()
+            isOpen ? handleClose() : handleOpen();
           }}
         />
 
@@ -165,8 +161,8 @@ const Dialog = forwardRef(
           </div>
         </section>
       </div>
-    )
+    );
   }
-)
+);
 
-export default Dialog
+export default Dialog;

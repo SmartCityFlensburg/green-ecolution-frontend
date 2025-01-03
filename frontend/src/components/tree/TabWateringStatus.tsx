@@ -10,22 +10,27 @@ interface TabWateringStatusProps {
 }
 
 const TabWateringStatus: React.FC<TabWateringStatusProps> = ({ tree }) => {
+  console.log(tree.sensor)
+  const averageResistance = tree?.sensor?.latestData?.watermarks
+  ? tree.sensor.latestData.watermarks.reduce((sum, watermark) => sum + watermark.resistance, 0) / tree.sensor.latestData.watermarks.length
+  : 0;
+
   // TODO: Switch to real content
   const statusProDepth = [
     {
       status: WateringStatus.WateringStatusGood,
       sensorCount: 1,
-      value: "42,46 kΩ",
+      value: tree.sensor.latestData.watermarks[0].resistance + "kΩ",
     },
     {
       status: WateringStatus.WateringStatusGood,
       sensorCount: 1,
-      value: "35,46 kΩ",
+      value: tree.sensor.latestData.watermarks[1].resistance + "kΩ",
     },
     {
       status: WateringStatus.WateringStatusModerate,
       sensorCount: 1,
-      value: "28,12 kΩ",
+      value: tree.sensor.latestData.watermarks[2].resistance + "kΩ",
     },
   ];
 
@@ -33,18 +38,18 @@ const TabWateringStatus: React.FC<TabWateringStatusProps> = ({ tree }) => {
   const statusCards = [
     {
       overline: "Bewässerungszustand (ø)",
-      value: "35,02 kΩ",
-      description: "+0.5% zu der letzten Messung.",
+      value: `${averageResistance.toFixed(2)} kΩ`,
+      description: "??kΩ zu der letzten Messung.",
     },
     {
       overline: "Bodenfeuchte",
-      value: "78 %",
-      description: "-0.5% zu der letzten Messung.",
+      value: `${(tree.sensor.latestData.humidity * 100).toFixed(0)}%`,
+      description: "??% zu der letzten Messung.",
     },
     {
       overline: "Bodentemperatur",
-      value: "12 °C",
-      description: "- 0.5 °C zur letzten Messung",
+      value: `${tree.sensor.latestData.temperature}°C`,
+      description: "??°C zur letzten Messung",
     },
   ]
 

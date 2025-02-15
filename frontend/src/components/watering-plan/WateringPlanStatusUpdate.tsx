@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import BackLink from '../general/links/BackLink'
 import {
   WateringPlanStatus,
+  WateringStatus,
 } from '@green-ecolution/backend-client'
 import { useInitFormQuery } from '@/hooks/form/useInitForm'
 import { wateringPlanIdQuery } from '@/api/queries'
@@ -22,6 +24,8 @@ import {
 } from '@/schema/wateringPlanSchema'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { SubmitHandler } from 'react-hook-form'
+import { getWateringStatusDetails } from '@/hooks/details/useDetailsForWateringStatus'
+import Input from '../general/form/types/Input'
 
 interface WateringPlanStatusUpdateProps {
   wateringPlanId: string
@@ -34,6 +38,7 @@ const WateringPlanStatusUpdate = ({
     'update',
     wateringPlanId
   )
+  
   const { initForm, loadedData } = useInitFormQuery(
     wateringPlanIdQuery(wateringPlanId),
     (data) => ({
@@ -45,6 +50,11 @@ const WateringPlanStatusUpdate = ({
       status: data.status,
       cancellationNote: data.cancellationNote,
       userIds: data.userIds,
+      evaluation: data.treeclusters?.map(cluster => ({
+        consumedWater: (cluster.treeIds?.length ?? 0) * 120,
+        treeClusterId: cluster.id,
+        wateringPlanId: Number(wateringPlanId),
+      })),
     })
   )
 
@@ -59,12 +69,53 @@ const WateringPlanStatusUpdate = ({
       zodResolver(WateringPlanSchema(false))
     )
 
+  const [manualEvaluation, setManualEvaluation] = useState(
+    loadedData?.treeclusters.map(cluster => ({
+      consumedWater: (cluster.treeIds?.length ?? 0) * 120,
+      treeClusterId: cluster.id,
+      wateringPlanId: Number(wateringPlanId),
+    })) || []
+  )
+
+  const [errorMessages, setErrorMessages] = useState<string[]>([])
+
+  const handleConsumedWaterChange = (index: number, value: string) => {
+    const numericValue = Number(value)
+
+    if (isNaN(numericValue)) {
+      return
+    }
+
+    if (numericValue < 0) {
+      setErrorMessages(prev => {
+        const newErrors = [...prev]
+        newErrors[index] = "Wert darf nicht unter 0 sein"
+        return newErrors
+      })
+    } else {
+      setErrorMessages(prev => {
+        const newErrors = [...prev]
+        newErrors[index] = ""
+        return newErrors
+      })
+    }
+  
+    setManualEvaluation(prev =>
+      prev.map((item, i) =>
+        i === index ? { ...item, consumedWater: numericValue } : item
+      )
+    )
+  }
+
   const onSubmit: SubmitHandler<WateringPlanForm> = async (data) => {
+    if (errorMessages.some(msg => msg !== "")) return;
+
     mutate({
       ...data,
       date: data.date.toISOString(),
       trailerId:
         data.trailerId && data.trailerId !== -1 ? data.trailerId : undefined,
+      evaluation: manualEvaluation
     })
   }
 
@@ -92,11 +143,7 @@ const WateringPlanStatusUpdate = ({
         </p>
         <p>
           Der Status eines Einsatzes beschreibt, ob er Einsatz beispielsweise
-          aktiv ausgeführt wird, beendet ist oder abgebrochen wurde. Diese
-          Angabe hilft dabei die erstellen Einsätze zu kategorisieren und eine
-          Auswertung anzulegen. Sobald ein Einsatz beendet wird, kann zudem
-          angegeben werden, mit wie viel Wasser die zugehörigen
-          Bewässerungsgruppen bewässert wurden.
+          aktiv ausgeführt wird, beendet ist oder abgebrochen wurde.
         </p>
       </article>
 
@@ -113,24 +160,46 @@ const WateringPlanStatusUpdate = ({
             />
             {selectedStatus ===
               WateringPlanStatus.WateringPlanStatusCanceled && (
-              <Textarea
-                placeholder="Warum wurde der Einatz abgebrochen?"
-                label="Grund des Abbruchs"
-                error={formState.errors.cancellationNote?.message}
-                {...register('cancellationNote')}
-              />
-            )}
+                <Textarea
+                  placeholder="Warum wurde der Einsatz abgebrochen?"
+                  label="Grund des Abbruchs"
+                  error={formState.errors.cancellationNote?.message}
+                  {...register('cancellationNote')}
+                />
+              )}
+            {selectedStatus ===
+              WateringPlanStatus.WateringPlanStatusFinished && (
+                <div className="space-y-3">
+                  {manualEvaluation.map((field, index) => (
+                    <div key={field.treeClusterId} className="flex items-center gap-x-4">
+                      <div className="w-full flex justify-between gap-x-6 bg-white border border-dark-50 shadow-cards px-4 py-3 rounded-lg">
+                        <h3 className={`relative font-medium pl-7 before:absolute before:w-4 before:h-4 before:rounded-full before:left-0 before:top-[0.22rem] before:bg-${getWateringStatusDetails(
+                            loadedData.treeclusters[index].wateringStatus ?? WateringStatus.WateringStatusUnknown,
+                          ).color}`}>
+                          <strong>Bewässerungsgruppe:</strong> {loadedData?.treeclusters[index].name} ·{" "}
+                          {loadedData?.treeclusters[index].id}
+                        </h3>
+                      </div>
+                      <div className="flex items-center">
+                        <Input
+                          error={errorMessages[index]}
+                          value={field.consumedWater.toString()}
+                          onChange={(e) => handleConsumedWaterChange(index, e.target.value)}
+                        />
+                        <span className="ml-2">Liter</span> 
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
 
-          <FormError
-            show={isError}
-            error={error?.message}
-          />
+          <FormError show={isError} error={error?.message} />
 
           <PrimaryButton
             type="submit"
             label="Speichern"
-            disabled={!formState.isValid}
+            disabled={errorMessages.some(msg => msg !== "")}
             className="mt-10"
           />
         </form>
